@@ -165,26 +165,52 @@
     }
 
     async function generatePreview() {
+      await generatePDF(true);
+    }
+
+    async function generatePDF(preview = false) {
       const { jsPDF } = window.jspdf;
       const format = document.getElementById('formatSelect').value;
       const emi = document.getElementById('emi').value.trim();
       const recu = document.getElementById('recuCustom').value.trim() || document.getElementById('recu').value;
       const nBon = document.getElementById('nBon').value.trim();
       const qttBon = document.getElementById('qttBon').value.trim();
+      const qttBox = document.getElementById('qttBox').value.trim();
       const nbBox = parseInt(document.getElementById('nbBox').value.trim(), 10);
+
+      const logoURL = 'https://i0.wp.com/pmg.dz/wp-content/uploads/2024/08/Logo-pmg-r.png?fit=1020,261&ssl=1';
+      const logo = await loadImage(logoURL);
 
       const doc = format === 'ticket'
         ? new jsPDF({ orientation: 'landscape', unit: 'mm', format: [57, 43] })
         : new jsPDF();
 
+      const generateQRCode = async (text) => {
+        return await new Promise((resolve) => {
+          QRCode.toDataURL(text, { width: 40 }, (err, url) => resolve(url));
+        });
+      };
+
       for (let i = 1; i <= nbBox; i++) {
         if (format === 'a4') {
-          doc.text(`ÉMETTEUR: ${emi}`, 10, 20);
-          doc.text(`RÉCEPTEUR: ${recu}`, 10, 30);
-          doc.text(`N° BON: ${nBon}`, 10, 40);
-          doc.text(`QTT BON: ${qttBon}`, 10, 50);
-          doc.text(`QTT BOX: ${qttBox}`, 10, 60);
-          doc.text(`BOX: ${i}/${nbBox}`, 10, 70);
+          const fichesParPage = 4;
+          const hauteurFiche = 65;
+          const posY = 10 + ((i - 1) % fichesParPage) * hauteurFiche;
+          if ((i - 1) % fichesParPage === 0 && i > 1) doc.addPage();
+
+          doc.setDrawColor(0);
+          doc.setFontSize(12);
+          doc.setFont(undefined, 'bold');
+          doc.rect(5, posY - 5, 200, 60);
+          doc.text(`ÉMETTEUR    : ${emi}`, 10, posY);
+          doc.text(`RÉCEPTEUR   : ${recu}`, 10, posY + 10);
+          doc.text(`N° BON      : ${nBon}`, 10, posY + 20);
+          doc.text(`QTT BON     : ${qttBon}`, 10, posY + 30);
+          doc.text(`QTT BOX     : ${qttBox}`, 10, posY + 40);
+          doc.text(`BOX         : ${i}/${nbBox}`, 10, posY + 50);
+          if (logo) doc.addImage(logo, 'PNG', 150, posY + 10, 40, 15);
+          const qr = await generateQRCode(`${nBon}-${i}/${nbBox}`);
+          doc.addImage(qr, 'PNG', 150, posY + 30, 20, 20);
         } else {
           doc.setFontSize(10);
           doc.setFont(undefined, 'bold');
@@ -193,11 +219,24 @@
           doc.text(`BON: ${nBon}`, 4, 20);
           doc.text(`QTT: ${qttBon}`, 4, 25);
           doc.text(`BOX: ${i}/${nbBox}`, 4, 30);
+          if (i < nbBox) doc.addPage();
         }
-        if (i < nbBox) doc.addPage();
       }
 
-      window.open(doc.output('bloburl'), '_blank');
+      if (preview) {
+        window.open(doc.output('bloburl'), '_blank');
+      } else {
+        doc.save(`fiches_box_${nBon}.pdf`);
+      }
+    }
+
+    function loadImage(url) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.crossOrigin = 'Anonymous';
+        img.src = url;
+      });
     }
   </script>
 </body>
