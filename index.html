@@ -6,20 +6,116 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; display: flex; flex-direction: column; align-items: center; background-color: #f9f9f9; }
-    form { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 500px; width: 100%; }
-    label { display: block; margin-top: 10px; font-weight: bold; }
-    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; }
-    button { margin-top: 15px; padding: 10px; font-weight: bold; border: none; border-radius: 5px; background-color: #007bff; color: white; cursor: pointer; width: 48%; }
-    .button-group { display: flex; justify-content: space-between; gap: 10px; }
-    #logo { width: 100px; margin-bottom: 10px; }
-    h2 { text-align: center; color: #333; }
-    .header-logo { display: flex; justify-content: space-between; align-items: center; }
-    .subheading { text-align: center; font-size: 1rem; color: #777; margin-bottom: 20px; }
-    .historique { margin-top: 20px; width: 100%; max-width: 500px; }
-    .historique h3 { text-align: center; color: #444; }
-    .historique ul { list-style-type: none; padding: 0; }
-    .historique li { padding: 8px; background: #fff; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 5px; }
+    :root {
+      --bg-color: #f9f9f9;
+      --text-color: #333;
+      --card-bg: white;
+      --border-color: #ccc;
+    }
+    body.dark {
+      --bg-color: #121212;
+      --text-color: #f0f0f0;
+      --card-bg: #1e1e1e;
+      --border-color: #444;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    form {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 100%;
+      border: 1px solid var(--border-color);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid var(--border-color);
+      background-color: var(--card-bg);
+      color: var(--text-color);
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      width: 48%;
+    }
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    #logo {
+      width: 100px;
+      margin-bottom: 10px;
+    }
+    h2 {
+      text-align: center;
+      color: var(--text-color);
+    }
+    .header-logo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 500px;
+    }
+    .subheading {
+      text-align: center;
+      font-size: 1rem;
+      color: #777;
+      margin-bottom: 20px;
+    }
+    .historique {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 500px;
+    }
+    .historique h3 {
+      text-align: center;
+      color: var(--text-color);
+    }
+    .historique ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .historique li {
+      padding: 8px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      margin-bottom: 5px;
+    }
+    .theme-toggle {
+      margin: 10px 0;
+      cursor: pointer;
+      font-size: 14px;
+      color: #007bff;
+      background: none;
+      border: none;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -27,11 +123,21 @@
     <h2>Générateur de Fiches Box</h2>
     <img id="logo" src="https://i0.wp.com/pmg.dz/wp-content/uploads/2024/08/Logo-pmg-r.png?fit=1020,261&ssl=1" alt="Logo PMG">
   </div>
+  <p class="subheading">Interface simple, claire, sans bruit visuel</p>
+  <button class="theme-toggle" onclick="toggleTheme()">Activer le mode sombre</button>
+
   <form id="form">
+    <label>Format d'impression :
+      <select id="formatSelect">
+        <option value="a4">Format A4</option>
+        <option value="ticket">Ticket (57x43mm)</option>
+      </select>
+    </label>
     <label>Émetteur : <input type="text" id="emi" required></label>
-    <label>Récepteur : 
+    <label>Récepteur :
       <select id="recu">
-        <option value="Warehouse Béni Messous">Warehouse Béni Messous UMBRO</option>
+        <option value="Warehouse Béni Messous">Warehouse Béni Messous</option>
+        <option value="UMBRO">UMBRO</option>
         <option value="DEPOT VILLA LACOSTE">DEPOT VILLA LACOSTE</option>
         <option value="E-COMMERCE">E-COMMERCE</option>
       </select>
@@ -51,127 +157,47 @@
     <ul id="historiqueList"></ul>
   </div>
   <script>
-    const storageFields = ['emi', 'recu', 'recuCustom', 'nBon', 'qttBon', 'qttBox', 'nbBox'];
-    window.onload = () => {
-      storageFields.forEach(id => {
-        const saved = localStorage.getItem(id);
-        if (saved) document.getElementById(id).value = saved;
-      });
-      document.getElementById('recu').addEventListener('change', () => {
-        const recuCustom = document.getElementById('recuCustom');
-        if (document.getElementById('recu').value === '') {
-          recuCustom.style.display = 'block';
-        } else {
-          recuCustom.value = '';
-        }
-      });
-      updateHistoriqueList();
-    };
-
-    function saveFormToLocalStorage() {
-      storageFields.forEach(id => {
-        localStorage.setItem(id, document.getElementById(id).value);
-      });
+    function toggleTheme() {
+      const body = document.body;
+      body.classList.toggle('dark');
+      const toggleBtn = document.querySelector('.theme-toggle');
+      toggleBtn.textContent = body.classList.contains('dark') ? 'Activer le mode clair' : 'Activer le mode sombre';
     }
 
-    async function getImageBase64(url) {
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        return await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      } catch (e) {
-        alert("Erreur de chargement du logo.");
-        return null;
-      }
-    }
-
-    async function generatePDF(preview = false) {
+    async function generatePreview() {
       const { jsPDF } = window.jspdf;
+      const format = document.getElementById('formatSelect').value;
       const emi = document.getElementById('emi').value.trim();
-      const recuSel = document.getElementById('recu').value;
-      const recuCustom = document.getElementById('recuCustom').value.trim();
-      const recu = recuCustom || recuSel;
+      const recu = document.getElementById('recuCustom').value.trim() || document.getElementById('recu').value;
       const nBon = document.getElementById('nBon').value.trim();
       const qttBon = document.getElementById('qttBon').value.trim();
-      const qttBox = document.getElementById('qttBox').value.trim();
-      const nbBox = parseInt(document.getElementById('nbBox').value);
+      const nbBox = parseInt(document.getElementById('nbBox').value.trim(), 10);
 
-      if (!emi || !recu || !nBon || !qttBon || !qttBox || !nbBox) {
-        alert("Veuillez remplir tous les champs obligatoires.");
-        return;
-      }
-
-      saveFormToLocalStorage();
-
-      const doc = new jsPDF();
-      const fichesParPage = 4;
-      const hauteurFiche = 65;
-      let posY = 10;
-      const logoURL = "https://i0.wp.com/pmg.dz/wp-content/uploads/2024/08/Logo-pmg-r.png?fit=1020,261&ssl=1";
-      const logoBase64 = await getImageBase64(logoURL);
+      const doc = format === 'ticket'
+        ? new jsPDF({ orientation: 'landscape', unit: 'mm', format: [57, 43] })
+        : new jsPDF();
 
       for (let i = 1; i <= nbBox; i++) {
-        doc.setDrawColor(0);
-        doc.rect(5, posY - 5, 200, 60);
-
-        doc.setFontSize(14);
-        doc.setFont(undefined, 'bold');
-        doc.text(`ÉMETTEUR    : ${emi}`, 10, posY);
-        doc.text(`RÉCEPTEUR   : ${recu}`, 10, posY + 10);
-        doc.text(`N° BON      : ${nBon}`, 10, posY + 20);
-        doc.text(`QTT BON     : ${qttBon}`, 10, posY + 30);
-        doc.text(`QTT BOX     : ${qttBox}`, 10, posY + 40);
-        doc.text(`BOX         : ${i}/${nbBox}`, 10, posY + 50);
-
-        if (logoBase64) {
-          doc.addImage(logoBase64, "PNG", 150, posY + 10, 40, 15);
-        }
-
-        const qrCanvas = document.createElement("canvas");
-        await QRCode.toCanvas(qrCanvas, nBon + `-${i}/${nbBox}`);
-        const qrDataURL = qrCanvas.toDataURL("image/png");
-        doc.addImage(qrDataURL, 'PNG', 150, posY + 30, 20, 20);
-
-        doc.setFontSize(12);
-        doc.text("✂", 6, posY - 2);
-
-        if (i % fichesParPage === 0 && i < nbBox) {
-          doc.addPage();
-          posY = 10;
+        if (format === 'a4') {
+          doc.text(`ÉMETTEUR: ${emi}`, 10, 20);
+          doc.text(`RÉCEPTEUR: ${recu}`, 10, 30);
+          doc.text(`N° BON: ${nBon}`, 10, 40);
+          doc.text(`QTT BON: ${qttBon}`, 10, 50);
+          doc.text(`QTT BOX: ${qttBox}`, 10, 60);
+          doc.text(`BOX: ${i}/${nbBox}`, 10, 70);
         } else {
-          posY += hauteurFiche;
+          doc.setFontSize(10);
+          doc.setFont(undefined, 'bold');
+          doc.text(`E: ${emi}`, 4, 10);
+          doc.text(`R: ${recu}`, 4, 15);
+          doc.text(`BON: ${nBon}`, 4, 20);
+          doc.text(`QTT: ${qttBon}`, 4, 25);
+          doc.text(`BOX: ${i}/${nbBox}`, 4, 30);
         }
+        if (i < nbBox) doc.addPage();
       }
 
-      if (!preview) {
-        doc.save(`fiches_box_${nBon}.pdf`);
-        const historique = JSON.parse(localStorage.getItem('historiquePDF') || '[]');
-        historique.push({ nBon, date: new Date().toLocaleString(), nbBox });
-        localStorage.setItem('historiquePDF', JSON.stringify(historique));
-        updateHistoriqueList();
-      } else {
-        window.open(doc.output("bloburl"), '_blank');
-      }
-    }
-
-    function generatePreview() {
-      generatePDF(true);
-    }
-
-    function updateHistoriqueList() {
-      const historiqueList = document.getElementById('historiqueList');
-      historiqueList.innerHTML = '';
-      const historique = JSON.parse(localStorage.getItem('historiquePDF') || '[]').reverse();
-      historique.forEach(entry => {
-        const li = document.createElement('li');
-        li.textContent = `${entry.nBon} - ${entry.date} - ${entry.nbBox} box`;
-        historiqueList.appendChild(li);
-      });
+      window.open(doc.output('bloburl'), '_blank');
     }
   </script>
 </body>
